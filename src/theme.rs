@@ -42,6 +42,12 @@ pub fn help_style() -> Style {
     Style::new().fg(COLOR_MUTED)
 }
 
+pub fn input_style() -> Style {
+    Style::new()
+        .fg(COLOR_FG_SELECTED)
+        .add_modifier(Modifier::BOLD)
+}
+
 /*pub fn error_style() -> Style {
     Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)
 }*/

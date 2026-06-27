@@ -1,4 +1,5 @@
 mod app;
+mod features;
 mod fs_entry;
 mod theme;
 mod ui;
@@ -54,12 +55,14 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> io::
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-
-            let is_quit = key.code == KeyCode::Char('q');
             let is_ctrl_c =
                 key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL);
 
-            if is_quit || is_ctrl_c {
+            if is_ctrl_c {
+                break;
+            }
+
+            if !app.is_capturing_keys() && key.code == KeyCode::Char('q') {
                 break;
             }
 

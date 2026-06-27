@@ -2,12 +2,21 @@ use std::path::PathBuf;
 
 use crossterm::event::KeyCode;
 
-use crate::fs_entry::{self, FsEntry};
+use crate::{
+    features::{Feature, FeatureOutcome, rename::RenameState},
+    fs_entry::{self, FsEntry},
+};
+
+pub enum AppMode {
+    Normal,
+    Rename(RenameState),
+}
 
 pub struct App {
     pub current_path: PathBuf,
     pub entries: Vec<FsEntry>,
     pub selected: usize,
+    pub mode: AppMode,
 }
 
 impl App {
@@ -18,18 +27,60 @@ impl App {
             current_path: start_path,
             entries,
             selected: 0,
+            mode: AppMode::Normal,
         })
     }
 
+    pub fn is_capturing_keys(&self) -> bool {
+        !matches!(self.mode, AppMode::Normal)
+    }
+
     pub fn handle_key(&mut self, key: KeyCode) -> std::io::Result<()> {
+        match &mut self.mode {
+            AppMode::Rename(state) => match state.handle_key(key) {
+                FeatureOutcome::Continue => {}
+                FeatureOutcome::Reaload => {
+                    self.mode = AppMode::Normal;
+                    self.reload_dir()?;
+                }
+                FeatureOutcome::Cancel => self.mode = AppMode::Normal,
+            },
+
+            AppMode::Normal => {
+                self.handle_normal_key(key)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn handle_normal_key(&mut self, key: KeyCode) -> std::io::Result<()> {
         match key {
             KeyCode::Char('j') | KeyCode::Down => self.move_down(),
             KeyCode::Char('k') | KeyCode::Up => self.move_up(),
             KeyCode::Char('l') | KeyCode::Enter => self.enter_selected()?,
             KeyCode::Char('h') => self.go_to_parent()?,
+            KeyCode::Char('r') => self.start_rename(),
             _ => {}
         }
+        Ok(())
+    }
 
+    fn start_rename(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            self.mode = AppMode::Rename(RenameState::new(entry));
+        }
+    }
+
+    fn reload_dir(&mut self) -> std::io::Result<()> {
+        self.entries = fs_entry::list_dir(&self.current_path)?;
+
+        if !self.entries.is_empty() && self.selected >= self.entries.len() {
+            self.selected = self.entries.len().saturating_sub(1);
+        }
+        if self.entries.is_empty() {
+            self.selected = 0;
+        }
         Ok(())
     }
 

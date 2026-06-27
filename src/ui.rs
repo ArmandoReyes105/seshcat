@@ -6,7 +6,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::App,
+    app::{App, AppMode},
+    features::Feature,
     theme::{self, path_style},
 };
 
@@ -20,7 +21,7 @@ pub fn render(frame: &mut Frame, app: &App) {
 
     render_header(frame, app, areas[0]);
     render_list(frame, app, areas[1]);
-    render_footer(frame, areas[2]);
+    render_footer(frame, app, areas[2]);
 }
 
 fn render_header(frame: &mut Frame, app: &App, area: Rect) {
@@ -86,7 +87,7 @@ fn render_list(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_stateful_widget(list, area, &mut state);
 }
 
-fn render_footer(frame: &mut Frame, area: Rect) {
+fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
     let help_text = Span::styled(
         "j/k mover ·  h subir  ·  l/enter entrar  ·  q salir",
         theme::help_style(),
@@ -97,6 +98,13 @@ fn render_footer(frame: &mut Frame, area: Rect) {
         .border_type(BorderType::Rounded)
         .border_style(theme::border_style());
 
-    let paragraph = Paragraph::new(Line::from(vec![help_text])).block(block);
-    frame.render_widget(paragraph, area);
+    let paragraph = match &app.mode {
+        AppMode::Rename(state) => {
+            let content = state.view();
+            Paragraph::new(Span::styled(content, theme::input_style())).block(block)
+        }
+        AppMode::Normal => Paragraph::new(Line::from(vec![help_text])).block(block),
+    };
+
+    frame.render_widget(paragraph, area)
 }
