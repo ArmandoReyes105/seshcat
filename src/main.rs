@@ -1,5 +1,6 @@
 mod app;
 mod fs_entry;
+mod theme;
 mod ui;
 
 use std::env;
