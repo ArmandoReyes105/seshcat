@@ -3,6 +3,7 @@ mod features;
 mod fs_entry;
 mod theme;
 mod ui;
+mod widgets;
 
 use std::env;
 use std::io::{self, Stdout};

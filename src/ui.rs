@@ -1,6 +1,6 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph},
 };
@@ -100,6 +100,13 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
 
     let paragraph = match &app.mode {
         AppMode::Rename(state) => {
+            const PROMPT_COLS: u16 = 11;
+
+            let cursor_x = area.x + 1 + PROMPT_COLS + state.cursor_col() as u16;
+            let cursor_y = area.y + 1;
+
+            frame.set_cursor_position(Position::new(cursor_x, cursor_y));
+
             let content = state.view();
             Paragraph::new(Span::styled(content, theme::input_style())).block(block)
         }

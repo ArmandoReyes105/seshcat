@@ -1162,6 +1162,7 @@ dependencies = [
  "crossterm",
  "ratatui",
  "tempfile",
+ "unicode-segmentation",
 ]
 
 [[package]]

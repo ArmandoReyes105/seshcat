@@ -58,8 +58,8 @@ impl App {
         match key {
             KeyCode::Char('j') | KeyCode::Down => self.move_down(),
             KeyCode::Char('k') | KeyCode::Up => self.move_up(),
-            KeyCode::Char('l') | KeyCode::Enter => self.enter_selected()?,
-            KeyCode::Char('h') => self.go_to_parent()?,
+            KeyCode::Char('l') | KeyCode::Enter | KeyCode::Right => self.enter_selected()?,
+            KeyCode::Char('h') | KeyCode::Left => self.go_to_parent()?,
             KeyCode::Char('r') => self.start_rename(),
             _ => {}
         }
