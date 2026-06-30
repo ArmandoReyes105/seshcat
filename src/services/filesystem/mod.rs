@@ -1,11 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{fs, io};
 
-pub struct FsEntry {
-    pub name: String,
-    pub path: PathBuf,
-    pub is_dir: bool,
-}
+use crate::models::FsEntry;
 
 pub fn list_dir(path: &Path) -> std::io::Result<Vec<FsEntry>> {
     let entries = fs::read_dir(path)?;

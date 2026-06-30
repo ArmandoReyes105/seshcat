@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use crossterm::event::KeyCode;
 
-use crate::features::{Feature, FeatureOutcome, navigation::NavigationState, rename::RenameState};
+use crate::contracts::{FeatureOutcome, InputHandler};
+use crate::features::{navigation::NavigationState, rename::RenameState};
 
 pub enum AppMode {
     Normal,

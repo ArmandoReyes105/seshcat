@@ -1,11 +1,10 @@
+mod input;
+mod view;
+
 use std::path::{Path, PathBuf};
 
-use crossterm::event::KeyCode;
-
-use crate::{
-    features::{Feature, FeatureOutcome},
-    fs_entry::{self, FsEntry},
-};
+use crate::models::FsEntry;
+use crate::services::filesystem;
 
 pub struct NavigationState {
     current_path: PathBuf,
@@ -15,7 +14,7 @@ pub struct NavigationState {
 
 impl NavigationState {
     pub fn new(start_path: &Path) -> std::io::Result<Self> {
-        let start_entries = fs_entry::list_dir(&start_path)?;
+        let start_entries = filesystem::list_dir(&start_path)?;
 
         Ok(Self {
             current_path: start_path.to_path_buf(),
@@ -25,7 +24,7 @@ impl NavigationState {
     }
 
     pub fn reload_dir(&mut self) -> std::io::Result<()> {
-        self.entries = fs_entry::list_dir(&self.current_path)?;
+        self.entries = filesystem::list_dir(&self.current_path)?;
 
         if !self.entries.is_empty() && self.selected >= self.entries.len() {
             self.selected = self.entries.len().saturating_sub(1);
@@ -80,7 +79,7 @@ impl NavigationState {
         }
 
         let next_path = entry.path.clone();
-        self.entries = fs_entry::list_dir(&next_path)?;
+        self.entries = filesystem::list_dir(&next_path)?;
         self.current_path = next_path;
         self.selected = 0;
 
@@ -93,28 +92,10 @@ impl NavigationState {
         };
 
         let parent_path = parent.to_path_buf();
-        self.entries = fs_entry::list_dir(&parent_path)?;
+        self.entries = filesystem::list_dir(&parent_path)?;
         self.current_path = parent_path;
         self.selected = 0;
 
         Ok(())
-    }
-}
-
-impl Feature for NavigationState {
-    fn handle_key(&mut self, key: crossterm::event::KeyCode) -> std::io::Result<FeatureOutcome> {
-        match key {
-            KeyCode::Char('j') | KeyCode::Down => self.move_down(),
-            KeyCode::Char('k') | KeyCode::Up => self.move_up(),
-            KeyCode::Char('l') | KeyCode::Enter | KeyCode::Right => self.enter_selected()?,
-            KeyCode::Char('h') | KeyCode::Left => self.go_to_parent()?,
-            _ => {}
-        }
-
-        Ok(FeatureOutcome::Continue)
-    }
-
-    fn view(&self) -> String {
-        String::new()
     }
 }

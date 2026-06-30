@@ -1,7 +1,8 @@
 mod app;
+mod contracts;
 mod features;
-mod fs_entry;
-mod theme;
+mod models;
+mod services;
 mod ui;
 mod widgets;
 
