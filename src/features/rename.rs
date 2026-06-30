@@ -29,43 +29,43 @@ impl RenameState {
 }
 
 impl Feature for RenameState {
-    fn handle_key(&mut self, key: KeyCode) -> FeatureOutcome {
+    fn handle_key(&mut self, key: KeyCode) -> std::io::Result<FeatureOutcome> {
         match key {
-            KeyCode::Esc => FeatureOutcome::Cancel,
-            KeyCode::Enter => self.confirm(),
+            KeyCode::Esc => Ok(FeatureOutcome::Cancel),
+            KeyCode::Enter => Ok(self.confirm()),
             KeyCode::Backspace => {
                 self.input.delete_back();
                 self.error = None;
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
             KeyCode::Delete => {
                 self.input.delete_forward();
                 self.error = None;
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
             KeyCode::Left => {
                 self.input.move_left();
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
             KeyCode::Right => {
                 self.input.move_right();
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
             KeyCode::Home => {
                 self.input.home();
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
             KeyCode::End => {
                 self.input.end();
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
 
             KeyCode::Char(c) => {
                 self.input.insert(c);
                 self.error = None;
-                FeatureOutcome::Continue
+                Ok(FeatureOutcome::Continue)
             }
-            _ => FeatureOutcome::Continue,
+            _ => Ok(FeatureOutcome::Continue),
         }
     }
 

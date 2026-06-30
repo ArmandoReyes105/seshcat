@@ -1,5 +1,6 @@
 use crossterm::event::KeyCode;
 
+pub mod navigation;
 pub mod rename;
 
 pub enum FeatureOutcome {
@@ -9,6 +10,6 @@ pub enum FeatureOutcome {
 }
 
 pub trait Feature {
-    fn handle_key(&mut self, key: KeyCode) -> FeatureOutcome;
+    fn handle_key(&mut self, key: KeyCode) -> std::io::Result<FeatureOutcome>;
     fn view(&self) -> String;
 }

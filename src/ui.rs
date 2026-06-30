@@ -25,13 +25,13 @@ pub fn render(frame: &mut Frame, app: &App) {
 }
 
 fn render_header(frame: &mut Frame, app: &App, area: Rect) {
-    let note = if app.current_path.parent().is_none() {
+    let note = if app.navigation.current_path().parent().is_none() {
         "(raíz del filesystem - no hay padre)"
     } else {
         ""
     };
 
-    let path_str = app.current_path.display().to_string();
+    let path_str = app.navigation.current_path().display().to_string();
     let text = Text::from(vec![
         Line::from(Span::styled("Seshcat", theme::title_style())),
         Line::from(Span::styled(path_str, path_style())),
@@ -49,7 +49,8 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
 
 fn render_list(frame: &mut Frame, app: &App, area: Rect) {
     let items: Vec<ListItem> = app
-        .entries
+        .navigation
+        .entries()
         .iter()
         .enumerate()
         .map(|(i, entry)| {
@@ -62,7 +63,7 @@ fn render_list(frame: &mut Frame, app: &App, area: Rect) {
             let tag_span = Span::styled(format!("[{:<7}]", tag), tag_style);
 
             let name_span = Span::raw(format!(" {}", entry.name));
-            let is_selected = i == app.selected;
+            let is_selected = i == app.navigation.selected();
             let cursor_span = if is_selected {
                 Span::styled("▎", theme::cursor_bar_style())
             } else {
@@ -82,7 +83,7 @@ fn render_list(frame: &mut Frame, app: &App, area: Rect) {
     let list = List::new(items);
 
     let mut state = ListState::default();
-    state.select(Some(app.selected));
+    state.select(Some(app.navigation.selected()));
 
     frame.render_stateful_widget(list, area, &mut state);
 }
