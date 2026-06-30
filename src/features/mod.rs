@@ -4,7 +4,7 @@ pub mod rename;
 
 pub enum FeatureOutcome {
     Continue,
-    Reaload,
+    Reload,
     Cancel,
 }
 

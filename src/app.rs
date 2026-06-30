@@ -39,7 +39,7 @@ impl App {
         match &mut self.mode {
             AppMode::Rename(state) => match state.handle_key(key) {
                 FeatureOutcome::Continue => {}
-                FeatureOutcome::Reaload => {
+                FeatureOutcome::Reload => {
                     self.mode = AppMode::Normal;
                     self.reload_dir()?;
                 }
@@ -88,15 +88,16 @@ impl App {
         if self.entries.is_empty() {
             return;
         }
-        if self.selected < self.entries.len() - 1 {
-            self.selected += 1;
-        }
+
+        self.selected = (self.selected + 1) % self.entries.len();
     }
 
     fn move_up(&mut self) {
-        if self.selected > 0 {
-            self.selected -= 1;
+        if self.entries.is_empty() {
+            return;
         }
+
+        self.selected = (self.selected + self.entries.len() - 1) % self.entries.len();
     }
 
     fn enter_selected(&mut self) -> std::io::Result<()> {

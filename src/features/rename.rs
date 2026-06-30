@@ -82,7 +82,7 @@ impl Feature for RenameState {
 impl RenameState {
     fn confirm(&mut self) -> FeatureOutcome {
         match fs_entry::rename(&self.target_path, &self.input.value()) {
-            Ok(()) => FeatureOutcome::Reaload,
+            Ok(()) => FeatureOutcome::Reload,
             Err(e) => {
                 self.error = Some(e.to_string());
                 FeatureOutcome::Continue
