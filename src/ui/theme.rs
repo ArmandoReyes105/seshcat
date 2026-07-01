@@ -48,6 +48,31 @@ pub fn input_style() -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
+/// Attenuated highlight for the current-directory entry shown inside the
+/// parent-preview pane. Distinct from `selected_style` (no background fill,
+/// no bold) so it reads as "informational" rather than "actionable".
+pub fn parent_highlight_style() -> Style {
+    Style::new().fg(COLOR_PRIMARY).add_modifier(Modifier::DIM)
+}
+
 /*pub fn error_style() -> Style {
     Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)
 }*/
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parent_highlight_style_is_dim_with_no_background() {
+        let style = parent_highlight_style();
+
+        assert!(style.add_modifier.contains(Modifier::DIM));
+        assert_eq!(style.bg, None);
+    }
+
+    #[test]
+    fn parent_highlight_style_is_distinct_from_selected_style() {
+        assert_ne!(parent_highlight_style(), selected_style());
+    }
+}
