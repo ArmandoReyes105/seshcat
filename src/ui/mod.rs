@@ -9,6 +9,7 @@ use ratatui::{
 
 use crate::app::{App, AppMode};
 use crate::contracts::View;
+use crate::features::navigation;
 
 pub fn render(frame: &mut Frame, app: &App) {
     let areas = Layout::vertical([
@@ -24,8 +25,8 @@ pub fn render(frame: &mut Frame, app: &App) {
 }
 
 fn render_header(frame: &mut Frame, app: &App, area: Rect) {
-    let note = if app.navigation.current_path().parent().is_none() {
-        "(raíz del filesystem - no hay padre)"
+    let note = if app.navigation.is_at_root() {
+        navigation::ROOT_NOTE
     } else {
         ""
     };

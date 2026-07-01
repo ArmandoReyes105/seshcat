@@ -51,6 +51,13 @@ impl NavigationState {
         self.entries.get(self.selected)
     }
 
+    /// `true` when the current directory has no parent (filesystem root).
+    /// Single source of truth reused by both the header and the
+    /// parent-preview pane.
+    pub fn is_at_root(&self) -> bool {
+        is_filesystem_root(&self.current_path)
+    }
+
     pub fn go_to(&mut self, path: &Path) -> std::io::Result<()> {
         let entries = filesystem::list_dir(path)?;
 
@@ -107,5 +114,41 @@ impl NavigationState {
         self.selected = 0;
 
         Ok(())
+    }
+}
+
+/// Note shown when the current directory has no parent (filesystem root).
+/// Single shared source of truth so the header and the parent-preview
+/// pane can never disagree or duplicate this indication.
+pub const ROOT_NOTE: &str = "(raíz del filesystem - no hay padre)";
+
+/// Returns `true` when `path` has no parent, i.e. it is a filesystem root
+/// (e.g. `C:\` on Windows or `/` on Unix). Pure, no IO.
+pub(crate) fn is_filesystem_root(path: &Path) -> bool {
+    path.parent().is_none()
+}
+
+#[cfg(test)]
+mod root_tests {
+    use super::*;
+
+    #[test]
+    fn detects_filesystem_root() {
+        #[cfg(windows)]
+        let root = PathBuf::from("C:\\");
+        #[cfg(not(windows))]
+        let root = PathBuf::from("/");
+
+        assert!(is_filesystem_root(&root));
+    }
+
+    #[test]
+    fn detects_non_root_path() {
+        #[cfg(windows)]
+        let non_root = PathBuf::from("C:\\Users");
+        #[cfg(not(windows))]
+        let non_root = PathBuf::from("/home");
+
+        assert!(!is_filesystem_root(&non_root));
     }
 }
