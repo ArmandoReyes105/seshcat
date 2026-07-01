@@ -55,10 +55,6 @@ pub fn parent_highlight_style() -> Style {
     Style::new().fg(COLOR_PRIMARY).add_modifier(Modifier::DIM)
 }
 
-/*pub fn error_style() -> Style {
-    Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)
-}*/
-
 #[cfg(test)]
 mod tests {
     use super::*;

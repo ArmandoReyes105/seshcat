@@ -77,8 +77,14 @@ impl NavigationState {
     }
 
     /// `true` when the current directory has no parent (filesystem root).
-    /// Single source of truth reused by both the header and the
-    /// parent-preview pane.
+    ///
+    /// Kept as a small, independently-tested public predicate even though
+    /// the render path no longer calls it directly: the header used to
+    /// render `navigation::ROOT_NOTE` here, duplicating the parent-preview
+    /// pane's own root indication (see `ParentView::Root`). The pane is now
+    /// the single owner of that indication, so this method has no current
+    /// caller outside tests.
+    #[allow(dead_code)]
     pub fn is_at_root(&self) -> bool {
         is_filesystem_root(&self.current_path)
     }
@@ -157,12 +163,17 @@ impl NavigationState {
 }
 
 /// Note shown when the current directory has no parent (filesystem root).
-/// Single shared source of truth so the header and the parent-preview
-/// pane can never disagree or duplicate this indication.
+/// Single source of truth for the indication, rendered exclusively by the
+/// parent-preview pane's `ParentView::Root` branch (the header must never
+/// render it too - that previously caused the note to appear twice).
 pub const ROOT_NOTE: &str = "(raíz del filesystem - no hay padre)";
 
 /// Returns `true` when `path` has no parent, i.e. it is a filesystem root
 /// (e.g. `C:\` on Windows or `/` on Unix). Pure, no IO.
+///
+/// Only caller left is `is_at_root` (itself no longer called from the
+/// render path - see its doc comment); kept and independently tested.
+#[allow(dead_code)]
 pub(crate) fn is_filesystem_root(path: &Path) -> bool {
     path.parent().is_none()
 }
