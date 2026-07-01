@@ -50,6 +50,16 @@ impl NavigationState {
     pub fn selected_entry(&self) -> Option<&FsEntry> {
         self.entries.get(self.selected)
     }
+
+    pub fn go_to(&mut self, path: &Path) -> std::io::Result<()> {
+        let entries = filesystem::list_dir(path)?;
+
+        self.current_path = path.to_path_buf();
+        self.entries = entries;
+        self.selected = 0;
+
+        Ok(())
+    }
 }
 
 impl NavigationState {

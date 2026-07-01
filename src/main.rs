@@ -1,4 +1,5 @@
 mod app;
+mod config;
 mod contracts;
 mod features;
 mod models;

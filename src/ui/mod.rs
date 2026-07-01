@@ -66,5 +66,6 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(paragraph, area);
         }
         AppMode::Rename(state) => state.render(frame, area),
+        _ => {}
     }
 }
