@@ -10,6 +10,7 @@ use ratatui::{
 use crate::app::{App, AppMode};
 use crate::contracts::View;
 use crate::features::navigation;
+use crate::features::parent_preview;
 
 pub fn render(frame: &mut Frame, app: &App) {
     let areas = Layout::vertical([
@@ -48,7 +49,11 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_list(frame: &mut Frame, app: &App, area: Rect) {
-    app.navigation.render(frame, area);
+    let columns =
+        Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)]).split(area);
+
+    parent_preview::view::render(frame, columns[0], &app.navigation);
+    app.navigation.render(frame, columns[1]);
 }
 
 fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
