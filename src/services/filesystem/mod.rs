@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::process::Command;
 use std::{fs, io};
 
 use crate::models::FsEntry;
@@ -65,6 +66,44 @@ pub fn rename(old_path: &Path, new_name: &str) -> io::Result<()> {
     };
 
     std::fs::rename(old_path, &new_path)
+}
+
+pub fn open_file(path: &Path) -> io::Result<()> {
+    if !path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Path does not exist",
+        ));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if path.is_dir() {
+            if Command::new("cmd")
+                .args(["/C", "code", &path.display().to_string()])
+                .status()
+                .is_ok_and(|s| s.success())
+            {
+                return Ok(());
+            }
+        }
+
+        Command::new("cmd")
+            .args(["/C", "start", "", &path.display().to_string()])
+            .spawn()?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open").arg(path).spawn()?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open").arg(path).spawn()?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

@@ -4,6 +4,7 @@ use crossterm::event::KeyCode;
 
 use crate::config::{self, Favorites};
 use crate::contracts::{FeatureOutcome, InputHandler};
+use crate::features::open;
 use crate::features::{navigation::NavigationState, rename::RenameState};
 
 pub enum AppMode {
@@ -42,6 +43,12 @@ impl App {
             }
 
             AppMode::Normal => match key {
+                KeyCode::Char('o') => {
+                    if let Some(entry) = self.navigation.selected_entry() {
+                        open::open_file(&entry.path)?;
+                    }
+                }
+                KeyCode::Char('O') => open::open_file(&self.navigation.current_path())?,
                 KeyCode::Char('f') => self.mode = AppMode::Leader,
                 KeyCode::Char('r') => self.start_rename(),
                 _ => {
