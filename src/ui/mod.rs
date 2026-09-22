@@ -13,7 +13,7 @@ use crate::features::parent_preview;
 
 pub fn render(frame: &mut Frame, app: &App) {
     let areas = Layout::vertical([
-        Constraint::Length(5),
+        Constraint::Length(3),
         Constraint::Fill(1),
         Constraint::Length(3),
     ])
@@ -25,19 +25,17 @@ pub fn render(frame: &mut Frame, app: &App) {
 }
 
 fn render_header(frame: &mut Frame, app: &App, area: Rect) {
-    // The root indication (`navigation::ROOT_NOTE`) is owned exclusively by
-    // the parent-preview pane's `ParentView::Root` branch - the header never
-    // renders it, so the screen shows exactly one root indication.
     let path_str = app.navigation.current_path().display().to_string();
-    let text = Text::from(vec![
-        Line::from(Span::styled("Seshcat", theme::title_style())),
-        Line::from(Span::styled(path_str, theme::path_style())),
-    ]);
+    let text = Text::from(vec![Line::from(Span::styled(
+        path_str,
+        theme::path_style(),
+    ))]);
 
     let block = Block::default()
-        .borders(Borders::ALL)
+        .borders(Borders::TOP | Borders::BOTTOM)
         .border_type(BorderType::Rounded)
-        .border_style(theme::border_style());
+        .border_style(theme::border_style())
+        .title("Seshcat ");
 
     let paragraph = Paragraph::new(text).block(block);
     frame.render_widget(paragraph, area);
@@ -53,9 +51,10 @@ fn render_list(frame: &mut Frame, app: &App, area: Rect) {
 
 fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
-        .borders(Borders::ALL)
+        .borders(Borders::TOP | Borders::BOTTOM)
         .border_type(BorderType::Rounded)
-        .border_style(theme::border_style());
+        .border_style(theme::border_style())
+        .title("Info ");
 
     match &app.mode {
         AppMode::Normal => {
@@ -67,7 +66,14 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(paragraph, area);
         }
         AppMode::Rename(state) => state.render(frame, area),
-        _ => {}
+        AppMode::Leader => {
+            let text = Span::styled(
+                "-- ★ Favorite Jump • Press a key • Esc Cancel --",
+                theme::help_style(),
+            );
+            let paragraph = Paragraph::new(text).block(block);
+            frame.render_widget(paragraph, area);
+        }
     }
 }
 

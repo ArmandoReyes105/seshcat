@@ -26,10 +26,6 @@ pub fn selected_style() -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
-pub fn title_style() -> Style {
-    Style::new().fg(COLOR_PRIMARY).add_modifier(Modifier::BOLD)
-}
-
 pub fn path_style() -> Style {
     Style::new().add_modifier(Modifier::BOLD)
 }

@@ -26,13 +26,13 @@ pub fn render_entry_list(
         .iter()
         .enumerate()
         .map(|(i, entry)| {
-            let tag = if entry.is_dir { "carpeta" } else { "archivo" };
+            let tag = if entry.is_dir { "\u{f07b}" } else { "\u{f15b}" };
             let tag_style = if entry.is_dir {
                 theme::dir_style()
             } else {
                 theme::file_style()
             };
-            let tag_span = Span::styled(format!("[{:<7}]", tag), tag_style);
+            let tag_span = Span::styled(format!("{:>3} ", tag), tag_style);
 
             let name_span = Span::raw(format!(" {}", entry.name));
             let is_highlighted = Some(i) == highlighted;
