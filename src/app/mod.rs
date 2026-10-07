@@ -123,10 +123,10 @@ impl App {
     fn handle_leader_key(&mut self, key: KeyCode) {
         self.mode = AppMode::Normal;
 
-        if let KeyCode::Char(c) = key {
-            if let Some(path) = self.favorites.map.get(&c).cloned() {
-                let _ = self.navigation.go_to(&path);
-            }
+        if let KeyCode::Char(c) = key
+            && let Some(path) = self.favorites.map.get(&c).cloned()
+        {
+            let _ = self.navigation.go_to(&path);
         }
     }
 

@@ -1,5 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
+#[derive(Default)]
 pub struct TextInput {
     value: String,
     cursor: usize,
@@ -10,13 +11,6 @@ impl TextInput {
         Self {
             value: initial.to_string(),
             cursor: initial.len(),
-        }
-    }
-
-    pub fn empty() -> Self {
-        Self {
-            value: String::new(),
-            cursor: 0,
         }
     }
 
@@ -98,14 +92,14 @@ mod tests {
 
     #[test]
     fn empty_cursor_at_zero() {
-        let input = TextInput::empty();
+        let input = TextInput::default();
         assert_eq!(input.cursor, 0);
         assert_eq!(input.value(), "");
     }
 
     #[test]
     fn insert_ascii() {
-        let mut input = TextInput::empty();
+        let mut input = TextInput::default();
         input.insert('a');
         assert_eq!(input.value(), "a");
         assert_eq!(input.cursor, 1);
@@ -113,7 +107,7 @@ mod tests {
 
     #[test]
     fn insert_multibyte() {
-        let mut input = TextInput::empty();
+        let mut input = TextInput::default();
         input.insert('ñ');
         assert_eq!(input.value(), "ñ");
         assert_eq!(input.cursor, 2);
@@ -121,7 +115,7 @@ mod tests {
 
     #[test]
     fn insert_emoji() {
-        let mut input = TextInput::empty();
+        let mut input = TextInput::default();
         input.insert('🦀');
         assert_eq!(input.value(), "🦀");
         assert_eq!(input.cursor, 4);

@@ -24,7 +24,7 @@ impl RenameState {
     }
 
     fn confirm(&mut self) -> FeatureOutcome {
-        match filesystem::rename(&self.target_path, &self.input.value()) {
+        match filesystem::rename(&self.target_path, self.input.value()) {
             Ok(()) => FeatureOutcome::Reload,
             Err(e) => {
                 self.error = Some(e.to_string());

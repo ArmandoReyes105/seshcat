@@ -78,14 +78,13 @@ pub fn open_file(path: &Path) -> io::Result<()> {
 
     #[cfg(target_os = "windows")]
     {
-        if path.is_dir() {
-            if Command::new("cmd")
+        if path.is_dir()
+            && Command::new("cmd")
                 .args(["/C", "code", &path.display().to_string()])
                 .status()
                 .is_ok_and(|s| s.success())
-            {
-                return Ok(());
-            }
+        {
+            return Ok(());
         }
 
         Command::new("cmd")
