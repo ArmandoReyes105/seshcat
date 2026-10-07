@@ -129,8 +129,8 @@ mod tests {
         let entries = vec![entry("alpha", true), entry("beta.txt", false)];
         let buf = render_to_buffer(&entries, Some(0), theme::selected_style(), 30);
 
-        assert_eq!(row_text(&buf, 0), "▎[carpeta] alpha");
-        assert_eq!(row_text(&buf, 1), " [archivo] beta.txt");
+        assert_eq!(row_text(&buf, 0), "▎  \u{f07b}  alpha");
+        assert_eq!(row_text(&buf, 1), "   \u{f15b}  beta.txt");
     }
 
     #[test]
@@ -141,14 +141,14 @@ mod tests {
 
         // Name span carries no explicit per-span style, so it directly
         // reflects the highlight style patched onto the whole row.
-        let name_col = "▎[carpeta]".chars().count() as u16;
+        let name_col = "▎  \u{f07b}  ".chars().count() as u16;
         let highlighted_cell = &buf[(name_col, 0)];
         assert_eq!(highlighted_cell.bg, highlight.bg.unwrap());
         assert_eq!(highlighted_cell.fg, highlight.fg.unwrap());
         assert!(highlighted_cell.modifier.contains(Modifier::BOLD));
 
         // The non-highlighted row must NOT carry the highlight background.
-        let normal_name_col = " [archivo]".chars().count() as u16;
+        let normal_name_col = "   \u{f15b}  ".chars().count() as u16;
         let normal_cell = &buf[(normal_name_col, 1)];
         assert_ne!(normal_cell.bg, highlight.bg.unwrap());
     }
@@ -161,8 +161,8 @@ mod tests {
         // since no real index equals 5, no row should be highlighted.
         let buf = render_to_buffer(&entries, Some(5), theme::selected_style(), 20);
 
-        assert_eq!(row_text(&buf, 0), " [carpeta] a");
-        assert_eq!(row_text(&buf, 1), " [archivo] b");
+        assert_eq!(row_text(&buf, 0), "   \u{f07b}  a");
+        assert_eq!(row_text(&buf, 1), "   \u{f15b}  b");
 
         let cell_a = &buf[(0, 0)];
         let cell_b = &buf[(0, 1)];
