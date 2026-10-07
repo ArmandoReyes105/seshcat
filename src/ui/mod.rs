@@ -58,19 +58,27 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
 
     match &app.mode {
         AppMode::Normal => {
-            let help_text = Span::styled(
-                "j/k mover ·  h subir  ·  l/enter entrar  ·  q salir",
-                theme::help_style(),
-            );
-            let paragraph = Paragraph::new(Line::from(vec![help_text])).block(block);
+            let line = match &app.status {
+                Some(message) => Span::styled(message.as_str(), theme::status_style()),
+                None => Span::styled(
+                    "j/k mover ·  h subir  ·  l/enter entrar  ·  q salir",
+                    theme::help_style(),
+                ),
+            };
+            let paragraph = Paragraph::new(Line::from(vec![line])).block(block);
             frame.render_widget(paragraph, area);
         }
         AppMode::Rename(state) => state.render(frame, area),
-        AppMode::Leader => {
+        AppMode::FavoritesLeader => {
             let text = Span::styled(
                 "-- ★ Favorite Jump • Press a key • Esc Cancel --",
                 theme::help_style(),
             );
+            let paragraph = Paragraph::new(text).block(block);
+            frame.render_widget(paragraph, area);
+        }
+        AppMode::GotoLeader => {
+            let text = Span::styled("-- Go to • c Config • Esc Cancel --", theme::help_style());
             let paragraph = Paragraph::new(text).block(block);
             frame.render_widget(paragraph, area);
         }
@@ -96,6 +104,49 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n")
+    }
+
+    fn render_to_text(app: &App) -> String {
+        let backend = TestBackend::new(150, 30);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal.draw(|frame| render(frame, app)).unwrap();
+        buffer_text(terminal.backend().buffer())
+    }
+
+    #[test]
+    fn footer_shows_goto_leader_hint() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut app = App::new(dir.path().to_path_buf()).unwrap();
+        app.mode = AppMode::GotoLeader;
+
+        let rendered = render_to_text(&app);
+
+        assert!(
+            rendered.contains("-- Go to • c Config • Esc Cancel --"),
+            "goto leader hint missing:\n{rendered}"
+        );
+    }
+
+    #[test]
+    fn footer_shows_status_in_normal_mode() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut app = App::new(dir.path().to_path_buf()).unwrap();
+        app.status = Some("Config dir not available".to_string());
+
+        let rendered = render_to_text(&app);
+
+        assert!(rendered.contains("Config dir not available"));
+        assert!(!rendered.contains("q salir"), "status replaces the help text");
+    }
+
+    #[test]
+    fn footer_shows_help_when_no_status() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let app = App::new(dir.path().to_path_buf()).unwrap();
+
+        let rendered = render_to_text(&app);
+
+        assert!(rendered.contains("q salir"));
     }
 
     /// Regression test for the root-indication duplication bug: at the

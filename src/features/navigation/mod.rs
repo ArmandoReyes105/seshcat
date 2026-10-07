@@ -48,6 +48,16 @@ impl NavigationState {
         })
     }
 
+    pub fn select_path(&mut self, path: &Path) -> bool {
+        match self.entries.iter().position(|entry| entry.path == path) {
+            Some(index) => {
+                self.selected = index;
+                true
+            }
+            None => false,
+        }
+    }
+
     pub fn reload_dir(&mut self) -> std::io::Result<()> {
         self.entries = filesystem::list_dir(&self.current_path)?;
 
@@ -354,5 +364,40 @@ mod parent_cache_tests {
             ),
             _ => panic!("expected a Listed parent snapshot"),
         }
+    }
+
+    #[test]
+    fn select_path_selects_matching_entry() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.txt"), b"x").unwrap();
+        fs::write(dir.path().join("b.txt"), b"x").unwrap();
+        fs::write(dir.path().join("c.txt"), b"x").unwrap();
+
+        let mut nav = NavigationState::new(dir.path()).unwrap();
+        let target = dir.path().join("c.txt");
+
+        let found = nav.select_path(&target);
+
+        assert!(found);
+        assert_eq!(nav.selected_entry().map(|e| e.path.clone()), Some(target));
+    }
+
+    #[test]
+    fn select_path_returns_false_and_keeps_selection_when_absent() {
+        let dir = TempDir::new().unwrap();
+        fs::write(dir.path().join("a.txt"), b"x").unwrap();
+        fs::write(dir.path().join("b.txt"), b"x").unwrap();
+
+        let mut nav = NavigationState::new(dir.path()).unwrap();
+        nav.selected = 1;
+
+        let found = nav.select_path(&dir.path().join("missing.txt"));
+
+        assert!(!found);
+        assert_eq!(
+            nav.selected(),
+            1,
+            "selection must not change when not found"
+        );
     }
 }

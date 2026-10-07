@@ -38,6 +38,10 @@ pub fn help_style() -> Style {
     Style::new().fg(COLOR_MUTED)
 }
 
+pub fn status_style() -> Style {
+    Style::new().fg(COLOR_ACCENT)
+}
+
 pub fn input_style() -> Style {
     Style::new()
         .fg(COLOR_FG_SELECTED)
