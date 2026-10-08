@@ -1,5 +1,7 @@
 use crossterm::event::KeyCode;
 
+use crate::features::command::RunTarget;
+
 use super::action::Action;
 
 pub fn normal_action(key: KeyCode) -> Option<Action> {
@@ -9,6 +11,8 @@ pub fn normal_action(key: KeyCode) -> Option<Action> {
         KeyCode::Char('f') => Some(Action::EnterFavoritesLeader),
         KeyCode::Char('g') => Some(Action::EnterGotoLeader),
         KeyCode::Char('r') => Some(Action::StartRename),
+        KeyCode::Char(':') => Some(Action::StartCommand(RunTarget::Here)),
+        KeyCode::Char('!') => Some(Action::StartCommand(RunTarget::NewTab)),
         _ => None,
     }
 }
@@ -59,6 +63,22 @@ mod tests {
     #[test]
     fn normal_r_starts_rename() {
         assert_eq!(normal_action(KeyCode::Char('r')), Some(Action::StartRename));
+    }
+
+    #[test]
+    fn normal_colon_starts_command_here() {
+        assert_eq!(
+            normal_action(KeyCode::Char(':')),
+            Some(Action::StartCommand(RunTarget::Here))
+        );
+    }
+
+    #[test]
+    fn normal_bang_starts_command_in_new_tab() {
+        assert_eq!(
+            normal_action(KeyCode::Char('!')),
+            Some(Action::StartCommand(RunTarget::NewTab))
+        );
     }
 
     #[test]

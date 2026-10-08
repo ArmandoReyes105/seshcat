@@ -1,3 +1,4 @@
+pub mod command;
 pub mod navigation;
 pub mod open;
 pub mod parent_preview;

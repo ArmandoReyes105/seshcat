@@ -69,6 +69,7 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(paragraph, area);
         }
         AppMode::Rename(state) => state.render(frame, area),
+        AppMode::Command(state) => state.render(frame, area),
         AppMode::FavoritesLeader => {
             let text = Span::styled(
                 "-- ★ Favorite Jump • Press a key • Esc Cancel --",
@@ -136,7 +137,10 @@ mod tests {
         let rendered = render_to_text(&app);
 
         assert!(rendered.contains("Config dir not available"));
-        assert!(!rendered.contains("q salir"), "status replaces the help text");
+        assert!(
+            !rendered.contains("q salir"),
+            "status replaces the help text"
+        );
     }
 
     #[test]

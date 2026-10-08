@@ -4,8 +4,10 @@ use crossterm::event::KeyCode;
 
 use crate::config::{self, Favorites};
 use crate::contracts::{FeatureOutcome, InputHandler};
+use crate::features::command::{CommandOutcome, CommandState, RunTarget};
 use crate::features::open;
 use crate::features::{navigation::NavigationState, rename::RenameState};
+use crate::services::terminal_host;
 
 use self::action::Action;
 
@@ -15,8 +17,14 @@ mod keymap;
 pub enum AppMode {
     Normal,
     Rename(RenameState),
+    Command(CommandState),
     FavoritesLeader,
     GotoLeader,
+}
+
+pub struct PendingCommand {
+    pub line: String,
+    pub cwd: PathBuf,
 }
 
 pub struct App {
@@ -25,6 +33,7 @@ pub struct App {
     pub favorites: Favorites,
     pub(crate) config_dir: Option<PathBuf>,
     pub status: Option<String>,
+    pending_command: Option<PendingCommand>,
 }
 
 impl App {
@@ -38,7 +47,12 @@ impl App {
             favorites,
             config_dir: config::config_dir(),
             status: None,
+            pending_command: None,
         })
+    }
+
+    pub fn take_pending_command(&mut self) -> Option<PendingCommand> {
+        self.pending_command.take()
     }
 
     pub fn is_capturing_keys(&self) -> bool {
@@ -63,6 +77,13 @@ impl App {
             AppMode::GotoLeader => {
                 self.mode = AppMode::Normal;
                 keymap::goto_action(key)
+            }
+
+            AppMode::Command(state) => {
+                let target = state.target;
+                let outcome = state.handle_key(key);
+                self.handle_command_outcome(outcome, target);
+                None
             }
 
             AppMode::Normal => {
@@ -93,9 +114,33 @@ impl App {
             Action::EnterGotoLeader => self.mode = AppMode::GotoLeader,
             Action::StartRename => self.start_rename(),
             Action::GoToConfig => self.go_to_config(),
+            Action::StartCommand(target) => {
+                self.mode = AppMode::Command(CommandState::new(target));
+            }
         }
 
         Ok(())
+    }
+
+    fn handle_command_outcome(&mut self, outcome: CommandOutcome, target: RunTarget) {
+        match outcome {
+            CommandOutcome::Cancel => self.mode = AppMode::Normal,
+            CommandOutcome::Continue => {}
+            CommandOutcome::Submit(line) => {
+                self.mode = AppMode::Normal;
+                let cwd = self.navigation.current_path().to_path_buf();
+
+                match target {
+                    RunTarget::Here => {
+                        self.pending_command = Some(PendingCommand { line, cwd });
+                    }
+                    RunTarget::NewTab => match terminal_host::detect().open_tab(&line, &cwd) {
+                        Ok(()) => self.status = Some(format!("Pestaña abierta: {line}")),
+                        Err(e) => self.status = Some(format!("No se pudo abrir la pestaña: {e}")),
+                    },
+                }
+            }
+        }
     }
 
     fn go_to_config(&mut self) {
@@ -229,6 +274,57 @@ mod tests {
         assert!(app.status.is_some(), "the user must be told what happened");
         assert!(matches!(app.mode, AppMode::Normal));
         assert_eq!(app.navigation.current_path(), start.path());
+
+        Ok(())
+    }
+
+    #[test]
+    fn colon_enters_command_mode_targeting_here() -> Result<(), Box<dyn std::error::Error>> {
+        let start = TempDir::new()?;
+        let mut app = App::new(start.path().to_path_buf())?;
+
+        app.handle_key(KeyCode::Char(':'))?;
+
+        assert!(matches!(
+            &app.mode,
+            AppMode::Command(state) if state.target == RunTarget::Here
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn command_submit_returns_to_normal_and_queues_pending_command()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let start = TempDir::new()?;
+        let mut app = App::new(start.path().to_path_buf())?;
+
+        app.handle_key(KeyCode::Char(':'))?;
+        for c in "ls".chars() {
+            app.handle_key(KeyCode::Char(c))?;
+        }
+        app.handle_key(KeyCode::Enter)?;
+
+        assert!(matches!(app.mode, AppMode::Normal));
+        let pending = app.take_pending_command().expect("a command is pending");
+        assert_eq!(pending.line, "ls");
+        assert_eq!(pending.cwd, start.path());
+        assert!(app.take_pending_command().is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn command_esc_cancels_without_pending_command() -> Result<(), Box<dyn std::error::Error>> {
+        let start = TempDir::new()?;
+        let mut app = App::new(start.path().to_path_buf())?;
+
+        app.handle_key(KeyCode::Char(':'))?;
+        app.handle_key(KeyCode::Char('l'))?;
+        app.handle_key(KeyCode::Esc)?;
+
+        assert!(matches!(app.mode, AppMode::Normal));
+        assert!(app.take_pending_command().is_none());
 
         Ok(())
     }

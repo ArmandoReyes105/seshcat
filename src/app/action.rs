@@ -1,3 +1,5 @@
+use crate::features::command::RunTarget;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     OpenSelected,
@@ -6,4 +8,5 @@ pub enum Action {
     EnterGotoLeader,
     StartRename,
     GoToConfig,
+    StartCommand(RunTarget),
 }
