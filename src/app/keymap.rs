@@ -13,6 +13,11 @@ pub fn normal_action(key: KeyCode) -> Option<Action> {
         KeyCode::Char('r') => Some(Action::StartRename),
         KeyCode::Char(':') => Some(Action::StartCommand(RunTarget::Here)),
         KeyCode::Char('!') => Some(Action::StartCommand(RunTarget::NewTab)),
+        KeyCode::Char('t') => Some(Action::CreateNewTab),
+        KeyCode::Char(']') => Some(Action::MoveTabForward),
+        KeyCode::Char('[') => Some(Action::MoveTabBackward),
+        KeyCode::Char('x') => Some(Action::DeleteTab),
+        KeyCode::Tab => Some(Action::CreateNewTab),
         _ => None,
     }
 }

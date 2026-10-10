@@ -14,6 +14,8 @@ use self::action::Action;
 mod action;
 mod keymap;
 
+const MAX_TABS: usize = 10;
+
 pub enum AppMode {
     Normal,
     Rename(RenameState),
@@ -28,7 +30,8 @@ pub struct PendingCommand {
 }
 
 pub struct App {
-    pub navigation: NavigationState,
+    pub tabs: Vec<NavigationState>,
+    pub active_tab: usize,
     pub mode: AppMode,
     pub favorites: Favorites,
     pub(crate) config_dir: Option<PathBuf>,
@@ -42,7 +45,8 @@ impl App {
         let favorites = config::load_favorites();
 
         Ok(Self {
-            navigation: state,
+            tabs: vec![state],
+            active_tab: 0,
             mode: AppMode::Normal,
             favorites,
             config_dir: config::config_dir(),
@@ -89,7 +93,7 @@ impl App {
             AppMode::Normal => {
                 let action = keymap::normal_action(key);
                 if action.is_none() {
-                    self.navigation.handle_key(key)?;
+                    self.tabs[self.active_tab].handle_key(key)?;
                 }
                 action
             }
@@ -105,11 +109,11 @@ impl App {
     fn dispatch(&mut self, action: Action) -> std::io::Result<()> {
         match action {
             Action::OpenSelected => {
-                if let Some(entry) = self.navigation.selected_entry() {
+                if let Some(entry) = self.tabs[self.active_tab].selected_entry() {
                     open::open_file(&entry.path)?;
                 }
             }
-            Action::OpenCurrentDir => open::open_file(self.navigation.current_path())?,
+            Action::OpenCurrentDir => open::open_file(self.tabs[self.active_tab].current_path())?,
             Action::EnterFavoritesLeader => self.mode = AppMode::FavoritesLeader,
             Action::EnterGotoLeader => self.mode = AppMode::GotoLeader,
             Action::StartRename => self.start_rename(),
@@ -117,9 +121,49 @@ impl App {
             Action::StartCommand(target) => {
                 self.mode = AppMode::Command(CommandState::new(target));
             }
+            Action::CreateNewTab => self.create_new_tab(),
+            Action::MoveTabForward => self.move_tab_forward(),
+            Action::MoveTabBackward => self.move_tab_backward(),
+            Action::DeleteTab => self.delete_tab(),
         }
 
         Ok(())
+    }
+
+    fn delete_tab(&mut self) {
+        if self.tabs.len() == 1 {
+            self.status = Some("No se puede cerrar la pestaña porque es la única.".to_owned());
+            return;
+        }
+
+        self.tabs.remove(self.active_tab);
+        if self.active_tab >= self.tabs.len() {
+            self.active_tab -= 1;
+        }
+    }
+
+    fn create_new_tab(&mut self) {
+        if self.tabs.len() >= MAX_TABS {
+            self.status = Some(format!(
+                "Solo puedes tener un máximo de {MAX_TABS} pestañas."
+            ));
+            return;
+        }
+
+        let path = self.tabs[self.active_tab].current_path().to_path_buf();
+        match NavigationState::new(&path) {
+            Ok(state) => self.tabs.push(state),
+            Err(e) => self.status = Some(format!("No se pudo abrir la pestaña: {e}")),
+        }
+    }
+
+    fn move_tab_forward(&mut self) {
+        self.active_tab = (self.active_tab + 1) % self.tabs.len();
+    }
+
+    fn move_tab_backward(&mut self) {
+        let len = self.tabs.len();
+        self.active_tab = (self.active_tab + len - 1) % len;
     }
 
     fn handle_command_outcome(&mut self, outcome: CommandOutcome, target: RunTarget) {
@@ -128,7 +172,7 @@ impl App {
             CommandOutcome::Continue => {}
             CommandOutcome::Submit(line) => {
                 self.mode = AppMode::Normal;
-                let cwd = self.navigation.current_path().to_path_buf();
+                let cwd = self.tabs[self.active_tab].current_path().to_path_buf();
 
                 match target {
                     RunTarget::Here => {
@@ -157,12 +201,12 @@ impl App {
             }
         };
 
-        if let Err(e) = self.navigation.go_to(&dir) {
+        if let Err(e) = self.tabs[self.active_tab].go_to(&dir) {
             self.status = Some(format!("Could not open config dir: {e}"));
             return;
         }
 
-        self.navigation.select_path(&keymap);
+        self.tabs[self.active_tab].select_path(&keymap);
     }
 
     fn handle_leader_key(&mut self, key: KeyCode) {
@@ -171,7 +215,7 @@ impl App {
         if let KeyCode::Char(c) = key
             && let Some(path) = self.favorites.map.get(&c).cloned()
         {
-            let _ = self.navigation.go_to(&path);
+            let _ = self.tabs[self.active_tab].go_to(&path);
         }
     }
 
@@ -181,7 +225,7 @@ impl App {
             FeatureOutcome::Cancel => self.mode = AppMode::Normal,
             FeatureOutcome::Reload => {
                 self.mode = AppMode::Normal;
-                self.navigation.reload_dir()?;
+                self.tabs[self.active_tab].reload_dir()?;
             }
         }
 
@@ -189,7 +233,7 @@ impl App {
     }
 
     fn start_rename(&mut self) {
-        if let Some(entry) = self.navigation.selected_entry() {
+        if let Some(entry) = self.tabs[self.active_tab].selected_entry() {
             self.mode = AppMode::Rename(RenameState::new(entry));
         }
     }
@@ -217,9 +261,8 @@ mod tests {
         app.handle_key(KeyCode::Char('c'))?;
 
         assert!(matches!(app.mode, AppMode::Normal));
-        assert_eq!(app.navigation.current_path(), cfg);
-        let selected = app
-            .navigation
+        assert_eq!(app.tabs[app.active_tab].current_path(), cfg);
+        let selected = app.tabs[app.active_tab]
             .selected_entry()
             .expect("an entry is selected");
         assert_eq!(selected.name, "keymap.toml");
@@ -241,7 +284,7 @@ mod tests {
         app.handle_key(KeyCode::Char('x'))?;
 
         assert!(matches!(app.mode, AppMode::Normal));
-        assert_eq!(app.navigation.current_path(), start.path());
+        assert_eq!(app.tabs[app.active_tab].current_path(), start.path());
         assert!(!cfg.exists(), "a cancelled leader must not create anything");
 
         Ok(())
@@ -273,7 +316,7 @@ mod tests {
 
         assert!(app.status.is_some(), "the user must be told what happened");
         assert!(matches!(app.mode, AppMode::Normal));
-        assert_eq!(app.navigation.current_path(), start.path());
+        assert_eq!(app.tabs[app.active_tab].current_path(), start.path());
 
         Ok(())
     }

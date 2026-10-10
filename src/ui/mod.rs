@@ -2,7 +2,8 @@ pub mod theme;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::Style,
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
@@ -13,19 +14,47 @@ use crate::features::parent_preview;
 
 pub fn render(frame: &mut Frame, app: &App) {
     let areas = Layout::vertical([
+        Constraint::Length(1),
         Constraint::Length(3),
         Constraint::Fill(1),
         Constraint::Length(3),
     ])
     .split(frame.area());
 
-    render_header(frame, app, areas[0]);
-    render_list(frame, app, areas[1]);
-    render_footer(frame, app, areas[2]);
+    render_header(frame, app, areas[1]);
+    render_list(frame, app, areas[2]);
+    render_footer(frame, app, areas[3]);
+    render_tabs(frame, app, areas[0]);
 }
 
+fn render_tabs(frame: &mut Frame, app: &App, area: Rect) {
+    let current_tab = app.active_tab + 1;
+    let mut cols = vec![];
+
+    for i in 0..app.tabs.len() {
+        let num = i + 1;
+
+        if num == current_tab {
+            cols.push(Span::styled(" ", theme::selected_style()));
+            cols.push(Span::styled(num.to_string(), theme::selected_style()));
+            cols.push(Span::styled(" ", theme::selected_style()));
+            cols.push(Span::styled(" ", Style::default()));
+        } else {
+            cols.push(Span::styled(num.to_string(), theme::file_style()));
+            cols.push(Span::styled(" ", Style::default()));
+        }
+    }
+
+    let line = Line::from(cols);
+    let text = Text::from(line);
+    let paragraph = Paragraph::new(text).alignment(Alignment::Center);
+    frame.render_widget(paragraph, area);
+}
 fn render_header(frame: &mut Frame, app: &App, area: Rect) {
-    let path_str = app.navigation.current_path().display().to_string();
+    let path_str = app.tabs[app.active_tab]
+        .current_path()
+        .display()
+        .to_string();
     let text = Text::from(vec![Line::from(Span::styled(
         path_str,
         theme::path_style(),
@@ -45,8 +74,8 @@ fn render_list(frame: &mut Frame, app: &App, area: Rect) {
     let columns =
         Layout::horizontal([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)]).split(area);
 
-    parent_preview::view::render(frame, columns[0], &app.navigation);
-    app.navigation.render(frame, columns[1]);
+    parent_preview::view::render(frame, columns[0], &app.tabs[app.active_tab]);
+    app.tabs[app.active_tab].render(frame, columns[1]);
 }
 
 fn render_footer(frame: &mut Frame, app: &App, area: Rect) {

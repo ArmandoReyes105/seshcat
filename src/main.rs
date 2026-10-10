@@ -115,7 +115,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> io::
                 }
 
                 // The command may have created, deleted or renamed files.
-                if let Err(e) = app.navigation.reload_dir() {
+                if let Err(e) = app.tabs[app.active_tab].reload_dir() {
                     app.status = Some(format!("No se pudo recargar el directorio: {e}"));
                 }
             }

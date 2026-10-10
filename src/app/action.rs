@@ -9,4 +9,8 @@ pub enum Action {
     StartRename,
     GoToConfig,
     StartCommand(RunTarget),
+    CreateNewTab,
+    MoveTabForward,
+    MoveTabBackward,
+    DeleteTab,
 }
